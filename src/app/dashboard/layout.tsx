@@ -1,8 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/auth-context";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -24,21 +22,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
-
-  if (!user) {
-    return null;
-  }
-
-  // Map routes to breadcrumb page names
   const breadcrumbMap: { [key: string]: string } = {
     "/dashboard": "Overview",
     "/dashboard/employees": "Employees",

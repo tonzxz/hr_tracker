@@ -12,9 +12,8 @@ import {
   LifeBuoy,
   Send,
 } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -43,7 +42,7 @@ const data = {
           url: "/dashboard/employees",
         },
         {
-          title: "Processes",
+          title: "Track Processes",
           url: "/dashboard/employee-processes",
         },
       ],
@@ -131,48 +130,39 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
-
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <User className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">HR Management</span>
-                </div>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 px-2 py-1 rounded-lg hover:bg-muted/10"
+              >
+                {/* Logo */}
+                <Image
+                  src="/auxilium-logo.png"
+                  alt="Auxilium"
+                  width={200}
+                  height={200}
+                  className="rounded-md"
+                />
+            
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.teams} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={{ name: user || "Guest", email: "", avatar: "" }} />
+        <NavUser user={{ name: "Guest", email: "", avatar: "" }} />
       </SidebarFooter>
     </Sidebar>
   );
