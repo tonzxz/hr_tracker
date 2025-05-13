@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import Lottie from "lottie-react";
 import loginAnimation from "@/animations/login-animation.json";
 
-export function LoginForm({ 
+export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -23,7 +23,10 @@ export function LoginForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(""); // Reset error message
+    console.log("Attempting login with:", { username, password }); // Debug log
     const success = login(username, password);
+    console.log("Login success:", success); // Debug log
     if (success) {
       router.push("/dashboard");
     } else {
@@ -67,6 +70,7 @@ export function LoginForm({
                 <Input
                   id="password"
                   type="password"
+                  placeholder="test"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

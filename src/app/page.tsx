@@ -16,7 +16,7 @@ export default function Home() {
   }, [user, router]);
 
   if (!user) {
-    return null; // Prevent flash of content
+    return null;   // Prevent flash of content
   }
 
   return (
