@@ -67,7 +67,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "CSM" | "HR_ADMIN";
+  role: "csm" | "hr_admin"| "client";
 }
 
 // Expanded Dummy Data
@@ -272,19 +272,22 @@ export const insurancePlans: InsurancePlan[] = [
   { id: "ip4", name: "Comprehensive Plan" },
 ];
 
+
 export const users: User[] = [
-  { id: "user1", name: "Firoz", email: "firoz@example.com", role: "CSM" },
-  { id: "user2", name: "Srini", email: "srini@example.com", role: "HR_ADMIN" },
-  { id: "user3", name: "Renesh", email: "renesh@example.com", role: "CSM" },
-  { id: "user4", name: "Dicksson Paniyadima", email: "dicksson.p@example.com", role: "HR_ADMIN" },
-  { id: "user5", name: "Mattieu Marc Geard Tisserand", email: "mattieu.t@example.com", role: "CSM" },
-  { id: "user6", name: "Peter John John Donnelly", email: "peter.d@example.com", role: "HR_ADMIN" },
-  { id: "user7", name: "Kyle Blaze", email: "kyle.b@example.com", role: "CSM" },
-  { id: "user8", name: "Shabba Eskandar Petri", email: "shabba.p@example.com", role: "HR_ADMIN" },
-  { id: "user9", name: "Yasir Gamal Moselly Elsayed Gamal Moselly Els Topsource Worldwide Group Limited", email: "yasir.m@example.com", role: "CSM" },
-  { id: "user10", name: "Esteban Pinilla Plata", email: "esteban.p@example.com", role: "HR_ADMIN" },
-  { id: "user11", name: "Vishnu Kilikkodan Kilikkodan Krishnakutty", email: "vishnu.k@example.com", role: "CSM" },
-  { id: "user12", name: "Dilip Singh Thakur", email: "dilip.t@example.com", role: "HR_ADMIN" },
-  { id: "user13", name: "Hemant Kumar Rathore", email: "hemant.r@example.com", role: "CSM" },
-  { id: "user14", name: "Tajinder Ahmad Neshat Parveen", email: "tajinder.n@example.com", role: "HR_ADMIN" },
+  { id: "user1", name: "Firoz", email: "firoz@example.com", role: "csm" },
+  { id: "user2", name: "Srini", email: "srini@example.com", role: "hr_admin" },
+  { id: "user3", name: "Renesh", email: "renesh@example.com", role: "csm" },
+  { id: "user4", name: "Dicksson Paniyadima", email: "dicksson.p@example.com", role: "hr_admin" },
+  { id: "user5", name: "Mattieu Marc Geard Tisserand", email: "mattieu.t@example.com", role: "csm" },
+  { id: "user6", name: "Peter John John Donnelly", email: "peter.d@example.com", role: "hr_admin" },
+  { id: "user7", name: "Kyle Blaze", email: "kyle.b@example.com", role: "csm" },
+  { id: "user8", name: "Shabba Eskandar Petri", email: "shabba.p@example.com", role: "hr_admin" },
+  { id: "user9", name: "Yasir Gamal Moselly Elsayed Gamal Moselly Els Topsource Worldwide Group Limited", email: "yasir.m@example.com", role: "csm" },
+  { id: "user10", name: "Esteban Pinilla Plata", email: "esteban.p@example.com", role: "hr_admin" },
+  { id: "user11", name: "Vishnu Kilikkodan Kilikkodan Krishnakutty", email: "vishnu.k@example.com", role: "csm" },
+  { id: "user12", name: "Dilip Singh Thakur", email: "dilip.t@example.com", role: "hr_admin" },
+  { id: "user13", name: "Hemant Kumar Rathore", email: "hemant.r@example.com", role: "csm" },
+  { id: "user14", name: "Tajinder Ahmad Neshat Parveen", email: "tajinder.n@example.com", role: "hr_admin" },
+  { id: "user15", name: "John Smith", email: "john.s@example.com", role: "client" },
+  { id: "user16", name: "Emma Wilson", email: "emma.w@example.com", role: "client" },
 ];

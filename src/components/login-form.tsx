@@ -10,15 +10,40 @@ import { useRouter } from "next/navigation";
 import Lottie from "lottie-react";
 import loginAnimation from "@/animations/login-animation.json";
 import { Mail, Grid2X2 } from "lucide-react";
+import { useState } from "react";
+import { users, User } from "@/lib/data";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    // Find user by email
+    const user = users.find((u: User) => u.email === email);
+
+    if (!user) {
+      setError("Invalid email or password");
+      return;
+    }
+
+    // Check password (all accounts use 'test' as per request)
+    if (password !== "test") {
+      setError("Invalid email or password");
+      return;
+    }
+
+    // Store user in sessionStorage
+    sessionStorage.setItem("user", JSON.stringify(user));
+
+    // Redirect to dashboard
     router.push("/dashboard");
   };
 
@@ -35,7 +60,7 @@ export function LoginForm({
             onSubmit={handleSubmit}
           >
             {/* Logo & Brand */}
-            <div className="flex items-center justify-center md:justify-start ">
+            <div className="flex items-center justify-center md:justify-start">
               <Image
                 src="/auxilium-logo.png"
                 alt="Auxilium"
@@ -43,20 +68,23 @@ export function LoginForm({
                 height={420}
                 className="h-32 w-auto"
               />
-            
             </div>
 
             <div className="flex flex-col gap-6">
-             
+              {error && (
+                <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
 
               <div className="grid gap-3">
-                <Label htmlFor="username" className="text-foreground">
-                  Username
+                <Label htmlFor="email" className="text-foreground">
+                  Email
                 </Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -77,6 +105,8 @@ export function LoginForm({
                   id="password"
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
@@ -117,7 +147,7 @@ export function LoginForm({
 
               <div className="text-center text-sm">
                 <span className="text-foreground">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                 </span>
                 <a
                   href="#"
@@ -171,7 +201,6 @@ export function LoginForm({
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }
