@@ -1,29 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react";
 import { employeeProcesses, EmployeeProcess, users, clients, employees } from "@/lib/data";
+
+// Placeholder for current user ID (replace with actual authentication logic)
+const currentUserId = "user1"; // Example: Replace with context or session value (e.g., useAuth().userId)
 
 export default function EmployeeProcessesPage() {
   const [localProcesses, setLocalProcesses] = useState<EmployeeProcess[]>([...employeeProcesses]);
+  const [selectedProcess, setSelectedProcess] = useState<EmployeeProcess | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProcess, setEditedProcess] = useState<EmployeeProcess | null>(null);
+
+  // Filter processes based on current user's HR Admin or CSM role, search term, and filter status
+  const filteredProcesses = localProcesses.filter((process) => {
+    const isAssigned = process.hrAdmId === currentUserId || process.csmId === currentUserId;
+    const employee = employees.find((emp) => emp.employeeProcessId === process.id);
+    const client = employee?.clientId
+      ? clients.find((client) => client.id === employee.clientId)
+      : undefined;
+    const matchesSearch = !searchTerm || 
+      (employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+       client?.clientName?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesFilter = !filterStatus || 
+      (filterStatus === "Pending" && !process.offerLetterApprovalDateFromClientHR) ||
+      (filterStatus === "Completed" && process.offerLetterApprovalDateFromClientHR);
+    return isAssigned && matchesSearch && matchesFilter;
+  });
 
   const handleCreate = () => {
     const newProcess: EmployeeProcess = {
       id: `proc${localProcesses.length + 1}`,
       requestReceiveDateFromCSMSales: new Date().toISOString().split("T")[0],
-      csmId: `user${Math.floor(Math.random() * 4) + 1}`,
-      hrAdmId: `user${Math.floor(Math.random() * 4) + 1}`,
-      clientId: `client${Math.floor(Math.random() * 4) + 1}`,
+      csmId: currentUserId,
+      hrAdmId: currentUserId,
       offerLetterIssueDateForCSMClientReview: null,
       offerLetterApprovalDateFromClientHR: null,
       offerLetterSentDateByCSMEmployee: null,
@@ -44,122 +73,381 @@ export default function EmployeeProcessesPage() {
 
   const handleDelete = (id: string) => {
     setLocalProcesses(localProcesses.filter((proc) => proc.id !== id));
+    if (selectedProcess?.id === id) setSelectedProcess(null);
   };
 
-  const handleUpdate = (id: string) => {
-    const updatedProcesses = localProcesses.map((proc) =>
-      proc.id === id
-        ? {
-            ...proc,
-            offerLetterApprovalDateFromClientHR: proc.offerLetterApprovalDateFromClientHR
-              ? null
-              : new Date().toISOString().split("T")[0],
-          }
-        : proc
-    );
-    setLocalProcesses(updatedProcesses);
+  const handleEdit = () => {
+    if (selectedProcess) {
+      setIsEditing(true);
+      setEditedProcess({ ...selectedProcess });
+    }
+  };
+
+  const handleSave = () => {
+    if (editedProcess && selectedProcess) {
+      const updatedProcesses = localProcesses.map((proc) =>
+        proc.id === selectedProcess.id ? editedProcess : proc
+      );
+      setLocalProcesses(updatedProcesses);
+      setIsEditing(false);
+      setEditedProcess(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedProcess(null);
+  };
+
+  const handleInputChange = (field: keyof EmployeeProcess, value: string) => {
+    if (editedProcess) {
+      setEditedProcess((prev) => (prev ? { ...prev, [field]: value } : null));
+    }
   };
 
   return (
-    <Card className="flex-1 rounded-xl bg-white shadow">
-      <CardHeader className="pb-0">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <CardTitle className="text-lg font-semibold">Manage Employee Processes</CardTitle>
-            <CardDescription className="text-sm font-normal">
-              View, Create, Update and Delete Employee Processes
-            </CardDescription>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-semibold text-gray-900">Manage Employee Processes</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            View, Create, Update, and Delete Employee Processes
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search by name or client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 pr-4 py-2 w-64 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+            <Search className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
           </div>
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setFilterStatus(filterStatus ? null : "Pending")}
+            className="flex items-center space-x-1 border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            <Filter className="h-4 w-4" />
+            <span>{filterStatus || "Filter"}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleCreate}
-            className="flex items-center space-x-1"
+            className="flex items-center space-x-2 border-gray-300 rounded-md hover:bg-gray-50"
           >
             <Plus className="h-4 w-4" />
             <span>Add Process</span>
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="overflow-x-auto">
-          <div className="min-w-[700px] rounded-lg border border-border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/20">
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Process ID</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Employee Name</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">CSM Name</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">HR Admin Name</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Client Name</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Request Date</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Offer Letter Issued</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Offer Letter Approved</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Offer Sent</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Contract Signed</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Insurance Request</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Insurance Paid</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Visa Request</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Visa Applied</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Visa Received</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Contract Received</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Expected Start</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Arrival Status</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">COH Signed</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">CLC/Mob Paid</TableHead>
-                  <TableHead className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-border">
-                {localProcesses.map((process, idx) => {
-                  const csm = users.find((user) => user.id === process.csmId);
-                  const hrAdmin = users.find((user) => user.id === process.hrAdmId);
-                  const client = clients.find((client) => client.id === process.clientId);
-                  const employee = employees.find((emp) => emp.employeeProcessId === process.id);
+      </div>
 
-                  return (
-                    <TableRow
-                      key={process.id}
-                      className={`transition-colors ${idx % 2 === 0 ? "bg-card" : "bg-muted/5"} hover:bg-muted/10`}
-                    >
-                      <TableCell className="px-6 py-4 text-sm font-medium">{process.id}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{employee?.name || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{csm?.name || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{hrAdmin?.name || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{client?.clientName || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.requestReceiveDateFromCSMSales}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.offerLetterIssueDateForCSMClientReview || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.offerLetterApprovalDateFromClientHR || "Pending"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.offerLetterSentDateByCSMEmployee || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.offerLetterContractSignDateByEmployee || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.medicalInsuranceInvoiceRequestDateByCSM || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.medicalInsurancePaymentDateByClient || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.eVisaWorkPermitIqamaRequestReceiveDateFromCSM || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.eVisaWorkPermitIqamaApplyDateByHRAdm || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.eVisaWorkPermitIqamaReceiveDateFromGafoor || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.contractReceiveDate || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.expectedStartDate || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.arrivalChangeStatusDateFromCSMEmployee || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.cohFormSignDate || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{process.clcMobPaid || "N/A"}</TableCell>
-                      <TableCell className="px-6 py-4 text-right">
-                        <div className="inline-flex items-center space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleUpdate(process.id)}>
-                            <Edit className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(process.id)} className="text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProcesses.map((process) => {
+          const employee = employees.find((emp) => emp.employeeProcessId === process.id);
+          const client = employee?.clientId
+            ? clients.find((client) => client.id === employee.clientId)
+            : undefined;
+          const imageUrl = "/sample.jpg"; // Using the image from public/sample.jpg
+
+          return (
+       <Card
+  key={process.id}
+  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer max-w-md"
+  onClick={() => setSelectedProcess(process)}
+>
+  <div className="flex items-center space-x-4">
+    <img
+      src={imageUrl}
+      alt={`${employee?.name || "User"}`}
+      className="w-20 h-20 object-cover rounded-full flex-shrink-0"
+    />
+    <div>
+      <CardTitle className="text-lg font-semibold text-gray-900">
+        {employee?.name || "N/A"}
+      </CardTitle>
+      <CardDescription className="text-sm text-gray-500">
+        {client?.clientName || "N/A"}
+      </CardDescription>
+    </div>
+  </div>
+  <p className="mt-4 text-sm font-semibold text-indigo-600 text-center">
+    Request Date: {process.requestReceiveDateFromCSMSales || "N/A"}
+  </p>
+</Card>
+
+
+
+          );
+        })}
+      </div>
+
+      <Dialog open={!!selectedProcess} onOpenChange={() => setSelectedProcess(null)}>
+        <DialogContent className="w-[1000px] max-w-[95vw] max-h-[80vh] overflow-y-auto bg-gray-100 rounded-xl shadow-md p-6">
+          <DialogHeader className=" border-gray-300 ">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {selectedProcess && employees.find((emp) => emp.employeeProcessId === selectedProcess.id)?.name || "N/A"}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              View and edit the employee process details below.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProcess && (
+            <div className="w-full">
+              <div className=" border">
+                <table className="w-full border-separate border-spacing-0">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="p-2 text-left text-sm font-medium text-gray-700">Field</th>
+                      <th className="p-2 text-left text-sm font-medium text-gray-700">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Client</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          value={clients.find((client) => client.id === employees.find((emp) => emp.employeeProcessId === selectedProcess.id)?.clientId)?.clientName || ""}
+                          onChange={(e) => handleInputChange("clientName" as keyof EmployeeProcess, e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">CSM</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          value={isEditing ? (editedProcess?.csmId || "") : users.find((user) => user.id === selectedProcess.csmId)?.name || ""}
+                          onChange={(e) => handleInputChange("csmId", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">HR Admin</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          value={isEditing ? (editedProcess?.hrAdmId || "") : users.find((user) => user.id === selectedProcess.hrAdmId)?.name || ""}
+                          onChange={(e) => handleInputChange("hrAdmId", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Request Date</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.requestReceiveDateFromCSMSales || "") : selectedProcess.requestReceiveDateFromCSMSales || ""}
+                          onChange={(e) => handleInputChange("requestReceiveDateFromCSMSales", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Offer Letter Issued</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.offerLetterIssueDateForCSMClientReview || "") : selectedProcess.offerLetterIssueDateForCSMClientReview || ""}
+                          onChange={(e) => handleInputChange("offerLetterIssueDateForCSMClientReview", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Offer Letter Approved</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.offerLetterApprovalDateFromClientHR || "") : selectedProcess.offerLetterApprovalDateFromClientHR || ""}
+                          onChange={(e) => handleInputChange("offerLetterApprovalDateFromClientHR", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Offer Sent</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.offerLetterSentDateByCSMEmployee || "") : selectedProcess.offerLetterSentDateByCSMEmployee || ""}
+                          onChange={(e) => handleInputChange("offerLetterSentDateByCSMEmployee", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Contract Signed</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.offerLetterContractSignDateByEmployee || "") : selectedProcess.offerLetterContractSignDateByEmployee || ""}
+                          onChange={(e) => handleInputChange("offerLetterContractSignDateByEmployee", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Insurance Request</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.medicalInsuranceInvoiceRequestDateByCSM || "") : selectedProcess.medicalInsuranceInvoiceRequestDateByCSM || ""}
+                          onChange={(e) => handleInputChange("medicalInsuranceInvoiceRequestDateByCSM", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Insurance Paid</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.medicalInsurancePaymentDateByClient || "") : selectedProcess.medicalInsurancePaymentDateByClient || ""}
+                          onChange={(e) => handleInputChange("medicalInsurancePaymentDateByClient", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Visa Request</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.eVisaWorkPermitIqamaRequestReceiveDateFromCSM || "") : selectedProcess.eVisaWorkPermitIqamaRequestReceiveDateFromCSM || ""}
+                          onChange={(e) => handleInputChange("eVisaWorkPermitIqamaRequestReceiveDateFromCSM", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Visa Applied</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.eVisaWorkPermitIqamaApplyDateByHRAdm || "") : selectedProcess.eVisaWorkPermitIqamaApplyDateByHRAdm || ""}
+                          onChange={(e) => handleInputChange("eVisaWorkPermitIqamaApplyDateByHRAdm", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Visa Received</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.eVisaWorkPermitIqamaReceiveDateFromGafoor || "") : selectedProcess.eVisaWorkPermitIqamaReceiveDateFromGafoor || ""}
+                          onChange={(e) => handleInputChange("eVisaWorkPermitIqamaReceiveDateFromGafoor", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Contract Received</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.contractReceiveDate || "") : selectedProcess.contractReceiveDate || ""}
+                          onChange={(e) => handleInputChange("contractReceiveDate", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Expected Start</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.expectedStartDate || "") : selectedProcess.expectedStartDate || ""}
+                          onChange={(e) => handleInputChange("expectedStartDate", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">Arrival Status</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.arrivalChangeStatusDateFromCSMEmployee || "") : selectedProcess.arrivalChangeStatusDateFromCSMEmployee || ""}
+                          onChange={(e) => handleInputChange("arrivalChangeStatusDateFromCSMEmployee", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">COH Signed</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.cohFormSignDate || "") : selectedProcess.cohFormSignDate || ""}
+                          onChange={(e) => handleInputChange("cohFormSignDate", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="p-2 text-sm font-medium text-gray-700">CLC/Mob Paid</td>
+                      <td className="p-2 text-sm text-gray-900">
+                        <Input
+                          type="date"
+                          value={isEditing ? (editedProcess?.clcMobPaid || "") : selectedProcess.clcMobPaid || ""}
+                          onChange={(e) => handleInputChange("clcMobPaid", e.target.value)}
+                          disabled={!isEditing}
+                          className="w-full border-none focus:ring-0 bg-transparent p-0"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          <div className="mt-6 flex justify-end space-x-4 border-t border-gray-200 pt-4">
+            {!isEditing ? (
+              <>
+                <Button variant="outline" onClick={handleEdit} className="bg-green-500 text-white hover:bg-green-600 rounded-md px-4 py-2">
+                  <Edit className="h-4 w-4 mr-2" /> Edit
+                </Button>
+                <Button variant="destructive" onClick={() => handleDelete(selectedProcess!.id)} className="bg-red-500 text-white hover:bg-red-600 rounded-md px-4 py-2">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={handleCancel} className="bg-gray-300 text-gray-800 hover:bg-gray-400 rounded-md px-4 py-2">
+                  Cancel
+                </Button>
+                <Button variant="default" onClick={handleSave} className="bg-blue-500 text-white hover:bg-blue-600 rounded-md px-4 py-2">
+                  Save
+                </Button>
+              </>
+            )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

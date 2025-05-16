@@ -3,7 +3,6 @@ export interface EmployeeProcess {
   requestReceiveDateFromCSMSales: string;
   csmId: string;
   hrAdmId: string;
-  clientId: string;
   offerLetterIssueDateForCSMClientReview: string | null;
   offerLetterApprovalDateFromClientHR: string | null;
   offerLetterSentDateByCSMEmployee: string | null;
@@ -21,15 +20,16 @@ export interface EmployeeProcess {
 }
 
 export interface Employee {
-  id: string;
+  id: string; 
   name: string;
   email: string;
   phoneNumber: string | null;
   jobTitle: string | null;
   department: string | null;
   hireDate: string | null;
-  employeeDetailsId: string | null;
-  employeeProcessId: string | null;
+  clientId: string | null;
+  employeeDetailsId: string;
+  employeeProcessId: string;
 }
 
 export interface EmployeeDetails {
@@ -67,7 +67,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "csm" | "hr_admin"| "client";
+  role: "csm" | "hr_admin" | "client";
 }
 
 // Expanded Dummy Data
@@ -80,6 +80,7 @@ export const employees: Employee[] = [
     jobTitle: "Software Engineer",
     department: "Engineering",
     hireDate: "2024-01-15",
+    clientId: "client1",
     employeeDetailsId: "det1",
     employeeProcessId: "proc1",
   },
@@ -91,6 +92,7 @@ export const employees: Employee[] = [
     jobTitle: "HR Manager",
     department: "HR",
     hireDate: "2023-06-20",
+    clientId: "client2",
     employeeDetailsId: "det2",
     employeeProcessId: "proc2",
   },
@@ -102,6 +104,7 @@ export const employees: Employee[] = [
     jobTitle: "Project Manager",
     department: "Engineering",
     hireDate: "2023-09-10",
+    clientId: "client3",
     employeeDetailsId: "det3",
     employeeProcessId: "proc3",
   },
@@ -113,6 +116,7 @@ export const employees: Employee[] = [
     jobTitle: "Recruiter",
     department: "HR",
     hireDate: "2024-03-05",
+    clientId: "client4",
     employeeDetailsId: "det4",
     employeeProcessId: "proc4",
   },
@@ -149,7 +153,7 @@ export const employeeDetails: EmployeeDetails[] = [
   {
     id: "det4",
     eonNum: "EON101",
-    employmentCountry: "Australia",
+    employmentCountry: "Australia Invited",
     inCountryPartnerId: "icp4",
     visaTypeId: "vt4",
     insurancePlanId: "ip4",
@@ -163,7 +167,6 @@ export const employeeProcesses: EmployeeProcess[] = [
     requestReceiveDateFromCSMSales: "2024-01-10",
     csmId: "user1",
     hrAdmId: "user2",
-    clientId: "client1",
     offerLetterIssueDateForCSMClientReview: "2024-01-12",
     offerLetterApprovalDateFromClientHR: "2024-01-14",
     offerLetterSentDateByCSMEmployee: "2024-01-15",
@@ -184,7 +187,6 @@ export const employeeProcesses: EmployeeProcess[] = [
     requestReceiveDateFromCSMSales: "2023-06-15",
     csmId: "user3",
     hrAdmId: "user4",
-    clientId: "client2",
     offerLetterIssueDateForCSMClientReview: "2023-06-17",
     offerLetterApprovalDateFromClientHR: null,
     offerLetterSentDateByCSMEmployee: null,
@@ -205,7 +207,6 @@ export const employeeProcesses: EmployeeProcess[] = [
     requestReceiveDateFromCSMSales: "2023-09-05",
     csmId: "user5",
     hrAdmId: "user6",
-    clientId: "client3",
     offerLetterIssueDateForCSMClientReview: "2023-09-07",
     offerLetterApprovalDateFromClientHR: "2023-09-09",
     offerLetterSentDateByCSMEmployee: "2023-09-10",
@@ -226,7 +227,6 @@ export const employeeProcesses: EmployeeProcess[] = [
     requestReceiveDateFromCSMSales: "2024-03-01",
     csmId: "user7",
     hrAdmId: "user8",
-    clientId: "client4",
     offerLetterIssueDateForCSMClientReview: "2024-03-03",
     offerLetterApprovalDateFromClientHR: null,
     offerLetterSentDateByCSMEmployee: null,
@@ -271,7 +271,6 @@ export const insurancePlans: InsurancePlan[] = [
   { id: "ip3", name: "Standard Plan" },
   { id: "ip4", name: "Comprehensive Plan" },
 ];
-
 
 export const users: User[] = [
   { id: "user1", name: "Firoz", email: "firoz@example.com", role: "csm" },
